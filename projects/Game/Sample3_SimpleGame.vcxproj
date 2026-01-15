@@ -192,9 +192,11 @@
   <ItemGroup>
     <ClInclude Include="include\CameraController.h" />
     <ClInclude Include="include\framework.h" />
+    <ClInclude Include="include\GroundCheck.h" />
     <ClInclude Include="include\LightController.h" />
     <ClInclude Include="include\main.h" />
     <ClInclude Include="include\MainGame.h" />
+    <ClInclude Include="include\MapBuilder.h" />
     <ClInclude Include="include\MapData.h" />
     <ClInclude Include="include\Player.h" />
     <ClInclude Include="Resource.h" />
@@ -203,9 +205,11 @@
   <ItemGroup>
     <ClCompile Include="src\CameraController.cpp" />
     <ClCompile Include="src\CreateDefaultScene.cpp" />
+    <ClCompile Include="src\GroundCheck.cpp" />
     <ClCompile Include="src\LightController.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\MainGame.cpp" />
+    <ClCompile Include="src\MapBuilder.cpp" />
     <ClCompile Include="src\MapData.cpp" />
     <ClCompile Include="src\Player.cpp" />
   </ItemGroup>

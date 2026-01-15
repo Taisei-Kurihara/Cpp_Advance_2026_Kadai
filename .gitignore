@@ -10,6 +10,7 @@
 *.userosscache
 *.sln.docstates
 *.env
+*.claude
 
 # サンプルのDebug設定を追跡
 !samples/*/*.vcxproj.user

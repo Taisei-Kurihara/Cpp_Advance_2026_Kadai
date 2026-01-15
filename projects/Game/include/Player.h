@@ -19,6 +19,15 @@ public:
 
     UniDx::Rigidbody* rb = nullptr;
 
+    // 接地判定.
+    bool isGrounded() const { return groundContactCount > 0; }
+    void onGroundEnter();
+    void onGroundExit();
+
 private:
     float animFrame;
+    int groundContactCount = 0;    // 地面との接触数.
+    int jumpTime = 0;              // ジャンプ入力時間.
+
+    void createGroundCheck();      // 足元トリガー作成.
 };

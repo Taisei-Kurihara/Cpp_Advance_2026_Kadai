@@ -12,6 +12,7 @@
 #include <UniDx/Font.h>
 #include <UniDx/Image.h>
 #include <UniDx/LightManager.h>
+#include <UniDx/Layer.h>
 
 #include "CameraController.h"
 #include "Player.h"
@@ -116,24 +117,30 @@ void MainGame::createMap()
                 break;
             }
 
-            // 床
+            // 床.
             if (i % 2 == 0 && j % 2 == 0)
             {
                 auto rb = make_unique<Rigidbody>();
                 rb->gravityScale = 0;
                 rb->mass = numeric_limits<float>::infinity();
+
+                auto floorCollider = make_unique<AABBCollider>();
+                floorCollider->layer = Layer::Ground;  // Groundレイヤーを設定.
+
                 auto floor = make_unique<GameObject>(u8"床",
                     CubeRenderer::create<VertexPNT>(floorMat),
                     move(rb),
-                    make_unique<AABBCollider>());
+                    move(floorCollider));
                 floor->transform->localScale = Vector3(4, 1, 4);
                 floor->transform->localPosition = Vector3(
                     i * 2 - float(MapData::getInstance()->getWidth() / 2) * 2 + 1.0f,
                     -1.5f,
                     j * -2 + float(MapData::getInstance()->getHeight() / 2) * 2 - 1.0f
                 );
+                floor->setLayer(Layer::Ground);  // GameObjectにもレイヤー設定.
+                floor->setTag(u8"Ground");       // タグも設定.
 
-                // 壁の親をマップにする
+                // 床の親をマップにする.
                 Transform::SetParent(move(floor), map->transform);
             }
         }
@@ -149,14 +156,14 @@ unique_ptr<UniDx::Scene> MainGame::CreateScene()
     auto playerObj = make_unique<GameObject>(u8"プレイヤー",
         make_unique<GltfModel>(),
         make_unique<Rigidbody>(),
-        make_unique<SphereCollider>(Vector3(0, 0.25f, 0)),
+        make_unique<SphereCollider>(Vector3(0, 0.25f,0.0f)),
         make_unique<Player>()
         );
     auto model = playerObj->GetComponent<GltfModel>(true);
     model->Load<VertexSkin>(
         u8"resource/mini_emma.glb",
         u8"resource/SkinBasic.hlsl");
-    playerObj->transform->localPosition = Vector3(0, -1, 0);
+    playerObj->transform->localPosition = Vector3(0, 5, 0);
     playerObj->transform->localRotation = Quaternion::Euler(0, 180, 0);
 
     // -- カメラ --

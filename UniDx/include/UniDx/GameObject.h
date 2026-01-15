@@ -109,6 +109,19 @@ public:
     void SetName(StringId n) { name_ = n; }
     bool checkDestroy();
 
+    // タグ.
+    StringId tag() const { return tag_; }
+    void setTag(StringId t) { tag_ = t; }
+    void setTag(const char8_t* t) { tag_ = StringId::intern(t); }
+
+    // タグ比較（Unity互換）.
+    bool CompareTag(StringId t) const { return tag_ == t; }
+    bool CompareTag(const char8_t* t) const { return tag_ == StringId::intern(t); }
+
+    // レイヤー.
+    int layer() const { return layer_; }
+    void setLayer(int l) { layer_ = l; }
+
     virtual void onTriggerEnter(Collider* other);
     virtual void onTriggerStay(Collider* other);
     virtual void onTriggerExit(Collider* other);
@@ -118,6 +131,8 @@ public:
 
 protected:
     StringId name_;
+    StringId tag_;                // タグ（デフォルトは空）.
+    int layer_ = 0;               // レイヤー（デフォルトは0）.
     std::vector<std::unique_ptr<Component>> components;
     bool isCalledDestroy = false;
 

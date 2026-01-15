@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <cstdint>
+
 #include "Component.h"
 #include "Bounds.h"
 #include "Physics.h"
@@ -20,8 +22,20 @@ namespace UniDx
         Rigidbody* attachedRigidbody = nullptr;
         bool isTrigger = false;
 
-        // 物理マテリアル
+        // 物理マテリアル.
         float bounciness = 0.75f;
+
+        // レイヤーベースの衝突フィルタリング.
+        int layer = 0;                      // このコライダーのレイヤー.
+        uint32_t layerMask = 0xFFFFFFFF;    // 衝突対象のレイヤーマスク（デフォルト: 全て）.
+
+        // レイヤーマスクによる衝突判定.
+        bool CanCollideWith(const Collider* other) const
+        {
+            // 双方向チェック: 両方のマスクで相手のレイヤーが許可されている必要がある.
+            return ((layerMask & (1u << other->layer)) != 0) &&
+                   ((other->layerMask & (1u << layer)) != 0);
+        }
 
         virtual void OnEnable() override
         {

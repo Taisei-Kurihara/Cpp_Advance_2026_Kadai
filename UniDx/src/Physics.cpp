@@ -313,14 +313,20 @@ namespace UniDx
     {
         if(shape1->moveBounds.Intersects(shape2->moveBounds))
         {
-            auto rbA = shape1->getCollider()->attachedRigidbody;
-            auto rbB = shape2->getCollider()->attachedRigidbody;
+            auto col1 = shape1->getCollider();
+            auto col2 = shape2->getCollider();
 
-            // 同じ Rigidbody に属しているコンパウンド同士は自己衝突なのでスキップ
+            // レイヤーマスクによるフィルタリング.
+            if(!col1->CanCollideWith(col2)) return;
+
+            auto rbA = col1->attachedRigidbody;
+            auto rbB = col2->attachedRigidbody;
+
+            // 同じ Rigidbody に属しているコンパウンド同士は自己衝突なのでスキップ.
             if(rbA && rbA == rbB) return;
 
-            // ペアを記憶
-            if(shape1->getCollider()->isTrigger || shape2->getCollider()->isTrigger)
+            // ペアを記憶.
+            if(col1->isTrigger || col2->isTrigger)
             {
                 // トリガー
                 potentialPairsTrigger.push_back({ shape1, shape2 });
