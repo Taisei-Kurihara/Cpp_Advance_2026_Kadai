@@ -295,11 +295,6 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="..\resource\VRoidT1.vrm">
-      <FileType>Document</FileType>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
     <CopyFileToFolders Include="..\resource\SkinBasic.hlsl">
       <FileType>Document</FileType>
     </CopyFileToFolders>

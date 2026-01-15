@@ -149,9 +149,6 @@
     <CopyFileToFolders Include="..\resource\AlbedoShade.hlsl">
       <Filter>リソース ファイル</Filter>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="..\resource\VRoidT1.vrm">
-      <Filter>リソース ファイル</Filter>
-    </CopyFileToFolders>
     <CopyFileToFolders Include="..\resource\SkinBasic.hlsl">
       <Filter>リソース ファイル</Filter>
     </CopyFileToFolders>
