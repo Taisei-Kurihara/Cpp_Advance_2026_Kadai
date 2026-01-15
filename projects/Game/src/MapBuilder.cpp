@@ -51,24 +51,22 @@ bool MapBuilder::isIgnoreChar(char c) const
 
 Vector3 MapBuilder::calculatePosition(int gridX, int gridY, int gridZ, Vector3 mapSize) const
 {
-    // グリッド座標からローカル座標へ変換.
-    Vector3 localPos{
-        static_cast<float>(gridX) * spacing_.x,
-        static_cast<float>(gridY) * spacing_.y,
-        static_cast<float>(gridZ) * spacing_.z
+    // アライメントに応じたオフセット計算.
+    // alignment = 0: 中央揃え → オフセット = (mapSize - 1) / 2.
+    // alignment = -1: 負方向端揃え → オフセット = 0.
+    // alignment = 1: 正方向端揃え → オフセット = mapSize - 1.
+    float offsetX = (mapSize.x - 1.0f) * (alignment_.x + 1.0f) * 0.5f;
+    float offsetY = (mapSize.y - 1.0f) * (alignment_.y + 1.0f) * 0.5f;
+    float offsetZ = (mapSize.z - 1.0f) * (alignment_.z + 1.0f) * 0.5f;
+
+    // グリッド座標からワールド座標へ変換.
+    Vector3 worldPos{
+        (static_cast<float>(gridX) - offsetX) * spacing_.x,
+        (static_cast<float>(gridY) - offsetY) * spacing_.y,
+        (static_cast<float>(gridZ) - offsetZ) * spacing_.z
     };
 
-    // アライメント調整.
-    // alignment = 0: 中央揃え.
-    // alignment = -1: 負方向端揃え.
-    // alignment = 1: 正方向端揃え.
-    Vector3 alignmentOffset{
-        (mapSize.x - 1) * spacing_.x * (alignment_.x + 1.0f) * 0.5f,
-        (mapSize.y - 1) * spacing_.y * (alignment_.y + 1.0f) * 0.5f,
-        (mapSize.z - 1) * spacing_.z * (alignment_.z + 1.0f) * 0.5f
-    };
-
-    return origin_ + localPos - alignmentOffset;
+    return origin_ + worldPos;
 }
 
 std::unique_ptr<GameObject> MapBuilder::Build(const std::vector<std::vector<std::string>>& mapData)
@@ -125,12 +123,12 @@ std::unique_ptr<GameObject> MapBuilder::Build(const std::vector<std::vector<std:
                     continue;
                 }
 
-                // 位置を計算（Z軸は反転して奥行き方向に）.
-                int gridZ = -static_cast<int>(z);
+                // 位置を計算.
+                // Z軸は行番号をそのまま使用（アライメントで中央揃えされる）.
                 Vector3 position = calculatePosition(
                     static_cast<int>(x),
                     static_cast<int>(y),
-                    gridZ,
+                    static_cast<int>(z),
                     mapSize
                 );
 
@@ -142,8 +140,8 @@ std::unique_ptr<GameObject> MapBuilder::Build(const std::vector<std::vector<std:
                     // 位置を設定.
                     obj->transform->localPosition = position;
 
-                    // スケールを設定.
-                    obj->transform->localScale = defaultSize_;
+                    // スケールはファクトリで設定されていなければデフォルトを使用.
+                    // （ファクトリ内で設定済みの場合は上書きしない）.
 
                     // 親子関係を設定.
                     Transform::SetParent(std::move(obj), root->transform);

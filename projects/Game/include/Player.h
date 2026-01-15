@@ -28,6 +28,7 @@ private:
     float animFrame;
     int groundContactCount = 0;    // 地面との接触数.
     int jumpTime = 0;              // ジャンプ入力時間.
+    int unJumpTime = 0;              // ジャンプ入力時間.
 
     void createGroundCheck();      // 足元トリガー作成.
 };

@@ -17,6 +17,7 @@
 #include "CameraController.h"
 #include "Player.h"
 #include "MapData.h"
+#include "MapBuilder.h"
 #include "LightController.h"
 
 #include <thread>
@@ -29,124 +30,128 @@ using namespace UniDx;
 
 void MainGame::createMap()
 {
-    // マップデータ作成
-    MapData::create();
-    MapData::getInstance()->load("resource/map_data.txt");
-
-    // マテリアルの作成
+    // マテリアルの作成.
     auto wallMat = std::make_shared<Material>();
     auto floorMat = std::make_shared<Material>();
     auto coinMat = std::make_shared<Material>();
 
-    // シェーダを指定してコンパイル
+    // シェーダを指定してコンパイル.
     wallMat->shader->compile<VertexPNT>(u8"resource/AlbedoShadeSpec.hlsl");
     floorMat->shader->compile<VertexPNT>(u8"resource/AlbedoShadeSpec.hlsl");
     floorMat->color = Color(0.85f, 0.8f, 0.85f);
     coinMat->shader->compile<VertexPN>(u8"resource/ShadeSpec.hlsl");
     coinMat->color = Color(1.0f, 0.9f, 0.1f);
 
-    // 床テクスチャ作成
+    // 床テクスチャ作成.
     auto floorTex = std::make_shared<Texture>();
     floorTex->Load(u8"resource/floor.png");
     floorMat->AddTexture(std::move(floorTex));
 
-    // 壁テクスチャ作成
+    // 壁テクスチャ作成.
     auto wallTex = std::make_shared<Texture>();
     wallTex->Load(u8"resource/wall.png");
     wallMat->AddTexture(std::move(wallTex));
 
-    // マップ作成
-    auto map = make_unique<GameObject>();
+    // MapBuilder設定.
+    MapBuilder builder;
+    builder
+        .setOrigin(Vector3(0, -1.5f, 0))   // Y=-1.5を基点（床の高さ）.
+        .setAlignment(Vector3(0, -1, 0))   // X,Z=中央揃え、Y=下揃え.
+        .setSpacing(Vector3(2, 1.5f, 2))   // X,Z=2間隔、Y=1.5間隔（床→壁）.
+        .setDefaultSize(Vector3(2, 2, 2)); // デフォルトサイズ.
 
-    // 各ブロック作成
-    for (int i = 0; i < MapData::getInstance()->getWidth(); i++)
-    {
-        for (int j = 0; j < MapData::getInstance()->getHeight(); j++)
+    // 床オブジェクト登録 'y'.
+    // 床を大きくして境界を減らす（4x4サイズ、間隔も4に対応）.
+    builder.Register('y', [&floorMat](Vector3 pos, Vector3 size) {
+        auto rb = make_unique<Rigidbody>();
+        rb->gravityScale = 0;
+        rb->mass = numeric_limits<float>::infinity();
+
+        auto floorCollider = make_unique<AABBCollider>();
+        floorCollider->layer = Layer::Ground;
+        // コライダーを大きくして境界での引っかかりを防ぐ.
+        floorCollider->size = Vector3(1.1f, 0.5f, 1.1f);
+        floorCollider->bounciness = 0.0f;  // 反発なし.
+
+        auto floor = make_unique<GameObject>(u8"床",
+            CubeRenderer::create<VertexPNT>(floorMat),
+            move(rb),
+            move(floorCollider));
+        floor->transform->localScale = Vector3(4, 1, 4);  // 床を大きく（4x4）.
+        floor->setLayer(Layer::Ground);
+        floor->setTag(u8"Ground");
+        return floor;
+    });
+
+    // 壁オブジェクト登録 'w'.
+    builder.Register('w', [&wallMat](Vector3 pos, Vector3 size) {
+        auto rb = make_unique<Rigidbody>();
+        rb->gravityScale = 0;
+        rb->mass = numeric_limits<float>::infinity();
+
+        auto wall = make_unique<GameObject>(u8"壁",
+            CubeRenderer::create<VertexPNT>(wallMat),
+            move(rb),
+            make_unique<AABBCollider>());
+        wall->transform->localScale = Vector3(2, 2, 2);
+        return wall;
+    });
+
+    // コインオブジェクト登録 'c'.
+    builder.Register('c', [&coinMat](Vector3 pos, Vector3 size) {
+        auto coin = make_unique<GameObject>(u8"Coin",
+            make_unique<GltfModel>(),
+            make_unique<Rigidbody>(),
+            make_unique<SphereCollider>(Vector3(0, -0.1f, 0), 0.4f));
+        auto model = coin->GetComponent<GltfModel>(true);
+        model->Load<VertexPN>(u8"resource/coin.glb", coinMat);
+        coin->transform->localScale = Vector3(3, 3, 3);
+        return coin;
+    });
+
+    // 3Dマップデータ [高さ][行][列].
+    // y=床, w=壁, c=コイン, _=空白.
+    // 床は4x4サイズなので1つおきに配置（境界を減らす）.
+    std::vector<std::vector<std::string>> mapData = {
+        // 高さ0（床レベル）.
         {
-            switch (MapData::getInstance()->getData(i, j))
-            {
-            case '#':
-            {
-                auto rb = make_unique<Rigidbody>();
-                rb->gravityScale = 0;
-                rb->mass = numeric_limits<float>::infinity();
-
-                // 壁オブジェクトを作成
-                auto wall = make_unique<GameObject>(u8"壁",
-                    CubeRenderer::create<VertexPNT>(wallMat),
-                    move(rb),
-                    make_unique<AABBCollider>());
-                wall->transform->localScale = Vector3(2, 2, 2);
-                wall->transform->localPosition = Vector3(
-                    i * 2 - float(MapData::getInstance()->getWidth() / 2) * 2,
-                    0,
-                    j * -2 + float(MapData::getInstance()->getHeight() / 2) * 2
-                );
-
-                // 壁の親をマップにする
-                Transform::SetParent(move(wall), map->transform);
-            }
-            break;
-
-            case 'C':
-            {
-                // コインオブジェクトを作成
-                auto coin = make_unique<GameObject>(u8"Coin",
-                    make_unique<GltfModel>(),
-                    make_unique<Rigidbody>(),
-                    make_unique<SphereCollider>(Vector3(0, -0.1f, 0), 0.4f)
-                );
-                auto model = coin->GetComponent<GltfModel>(true);
-                model->Load<VertexPN>(
-                    u8"resource/coin.glb",
-                    coinMat);
-
-                coin->transform->localPosition = Vector3(
-                    i * 2 - float(MapData::getInstance()->getWidth() / 2) * 2,
-                    -0.5f,
-                    j * -2 + float(MapData::getInstance()->getHeight() / 2) * 2
-                );
-                coin->transform->localScale = Vector3(3, 3, 3);
-
-                // コインの親をマップにする
-                Transform::SetParent(move(coin), map->transform);
-            }
-            break;
-
-            default:
-                break;
-            }
-
-            // 床.
-            if (i % 2 == 0 && j % 2 == 0)
-            {
-                auto rb = make_unique<Rigidbody>();
-                rb->gravityScale = 0;
-                rb->mass = numeric_limits<float>::infinity();
-
-                auto floorCollider = make_unique<AABBCollider>();
-                floorCollider->layer = Layer::Ground;  // Groundレイヤーを設定.
-
-                auto floor = make_unique<GameObject>(u8"床",
-                    CubeRenderer::create<VertexPNT>(floorMat),
-                    move(rb),
-                    move(floorCollider));
-                floor->transform->localScale = Vector3(4, 1, 4);
-                floor->transform->localPosition = Vector3(
-                    i * 2 - float(MapData::getInstance()->getWidth() / 2) * 2 + 1.0f,
-                    -1.5f,
-                    j * -2 + float(MapData::getInstance()->getHeight() / 2) * 2 - 1.0f
-                );
-                floor->setLayer(Layer::Ground);  // GameObjectにもレイヤー設定.
-                floor->setTag(u8"Ground");       // タグも設定.
-
-                // 床の親をマップにする.
-                Transform::SetParent(move(floor), map->transform);
-            }
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y"
+        },
+        // 高さ1（壁・コインレベル）.
+        {
+            "wwwwwwwwwwwwwww",
+            "wcw_c_________w",
+            "w_wwwwwwwwwww_w",
+            "w_w____c______w",
+            "w___w_wwwww___w",
+            "www_w____cw_www",
+            "w___wwwwwww___w",
+            "w_____________w",
+            "wwwww_www_wwwww",
+            "wcw_____w__c__w",
+            "w_wwwww_wwwww_w",
+            "w_wcw_________w",
+            "w_w_w_w_wwwwwww",
+            "w_____w______cw",
+            "wwwwwwwwwwwwwww"
         }
-    }
+    };
 
-    mapObj = move(map);
+    mapObj = builder.Build(mapData);
 }
 
 
