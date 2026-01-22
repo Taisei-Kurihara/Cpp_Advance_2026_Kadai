@@ -70,7 +70,7 @@ void MainGame::createMap()
 
         auto floorCollider = make_unique<AABBCollider>();
         floorCollider->layer = Layer::Ground;
-        floorCollider->size = Vector3(1.1f, 0.5f, 1.1f);
+        floorCollider->size = Vector3(0.5f, 0.5f, 0.5f);
         floorCollider->bounciness = 0.0f;
         // Player/Enemyレイヤーとのみ衝突判定.
         floorCollider->layerMask = LayerMask::GetMask(Layer::Player, Layer::Enemy);
@@ -188,7 +188,7 @@ void MainGame::createMap()
             "w_____________w",
             "w_____________w",
             "w_____________w",
-            "w_____________w",
+            "w_y_y_y_y_y_y_w",
             "w_____________w",
             "w_____________w",
             "w_____________w",
@@ -242,25 +242,25 @@ void MainGame::createMap()
             "w_____________w",
             "w_____________w",
             "w_____________w",
+            "w_y_y_y_y_y_y_w",
+            "w_____________w",
+            "w_____________w",
+            "w_y_y_y_y_y_y_w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_y_y_y_y_y_y_w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_y_y_y_y_y_y_w",
             "w_____________w",
             "w_____________w",
             "w_____________w",
             "w_____________w",
             "w_____________w",
-            "w_____________w",
-            "w_____________w",
-            "w_____________w",
-            "w_____________w",
-            "w_____________w",
-            "w_____________w",
-            "w_____________w",
-            "w_____________w",
-            "w_____________w",
-            "w_____________w",
-            "w_____________w",
-            "w_____________w",
-            "w_____________w",
-            "w_____________w",
+            "w_y_y_y_y_y_y_w",
             "w_____________w",
             "w_____________w",
             "w_____________w",
