@@ -92,7 +92,7 @@ std::unique_ptr<GameObject> MapBuilder::Build(const std::vector<std::vector<std:
     };
 
     // ルートGameObjectを作成.
-    auto root = std::make_unique<GameObject>(u8"MapRoot");
+    auto root = std::make_unique<GameObject>(u8"MapRoot ");
 
     // 各レイヤー（高さ）を処理.
     for (size_t y = 0; y < mapData.size(); ++y)

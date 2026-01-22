@@ -55,13 +55,13 @@ void MainGame::createMap()
     // MapBuilder設定.
     MapBuilder builder;
     builder
-        .setOrigin(Vector3(0, -1.5f, 0))   // Y=-1.5を基点（床の高さ）.
+        .setOrigin(Vector3(0, -1.5f, 50))   // Y=-1.5を基点（床の高さ）.
         .setAlignment(Vector3(0, -1, 0))   // X,Z=中央揃え、Y=下揃え.
         .setSpacing(Vector3(2, 1.5f, 2))   // X,Z=2間隔、Y=1.5間隔（床→壁）.
         .setDefaultSize(Vector3(2, 2, 2)); // デフォルトサイズ.
 
     // 床オブジェクト登録 'y'.
-    // 床を大きくして境界を減らす（4x4サイズ、間隔も4に対応）.
+    // layerMaskでPlayer/Enemyとのみ衝突判定（床同士の判定をスキップして軽量化）.
     builder.Register('y', [&floorMat](Vector3 pos, Vector3 size) {
         auto rb = make_unique<Rigidbody>();
         rb->gravityScale = 0;
@@ -69,30 +69,38 @@ void MainGame::createMap()
 
         auto floorCollider = make_unique<AABBCollider>();
         floorCollider->layer = Layer::Ground;
-        // コライダーを大きくして境界での引っかかりを防ぐ.
         floorCollider->size = Vector3(1.1f, 0.5f, 1.1f);
-        floorCollider->bounciness = 0.0f;  // 反発なし.
+        floorCollider->bounciness = 0.0f;
+        // Player/Enemyレイヤーとのみ衝突判定.
+        floorCollider->layerMask = LayerMask::GetMask(Layer::Player, Layer::Enemy);
 
         auto floor = make_unique<GameObject>(u8"床",
             CubeRenderer::create<VertexPNT>(floorMat),
             move(rb),
             move(floorCollider));
-        floor->transform->localScale = Vector3(4, 1, 4);  // 床を大きく（4x4）.
+        floor->transform->localScale = Vector3(4, 1, 4);
         floor->setLayer(Layer::Ground);
         floor->setTag(u8"Ground");
         return floor;
     });
 
     // 壁オブジェクト登録 'w'.
+    // layerMaskでPlayer/Enemyとのみ衝突判定（壁同士の判定をスキップして軽量化）.
     builder.Register('w', [&wallMat](Vector3 pos, Vector3 size) {
         auto rb = make_unique<Rigidbody>();
         rb->gravityScale = 0;
         rb->mass = numeric_limits<float>::infinity();
 
+        auto wallCollider = make_unique<AABBCollider>();
+        wallCollider->size = Vector3(0.5f, 0.5f, 0.5f);
+        wallCollider->bounciness = 0.0f;
+        // Player/Enemyレイヤーとのみ衝突判定.
+        wallCollider->layerMask = LayerMask::GetMask(Layer::Player, Layer::Enemy);
+
         auto wall = make_unique<GameObject>(u8"壁",
             CubeRenderer::create<VertexPNT>(wallMat),
             move(rb),
-            make_unique<AABBCollider>());
+            move(wallCollider));
         wall->transform->localScale = Vector3(2, 2, 2);
         return wall;
     });
@@ -109,12 +117,52 @@ void MainGame::createMap()
         return coin;
     });
 
-    // 3Dマップデータ [高さ][行][列].
+    // 3Dマップデータ [高さ][Z行][X列] - 90度回転済み.
     // y=床, w=壁, c=コイン, _=空白.
     // 床は4x4サイズなので1つおきに配置（境界を減らす）.
     std::vector<std::vector<std::string>> mapData = {
-        // 高さ0（床レベル）.
+        // 高さ0（床レベル）- Z方向に展開.
         {
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
+            "y_y_y_y_y_y_y_y",
+            "_______________",
             "y_y_y_y_y_y_y_y",
             "_______________",
             "y_y_y_y_y_y_y_y",
@@ -130,26 +178,168 @@ void MainGame::createMap()
             "y_y_y_y_y_y_y_y",
             "_______________",
             "y_y_y_y_y_y_y_y"
-        },
-        // 高さ1（壁・コインレベル）.
+        }
+        ,
+        // 高さ1（壁・コインレベル）- Z方向に展開.
         {
             "wwwwwwwwwwwwwww",
-            "wcw_c_________w",
-            "w_wwwwwwwwwww_w",
-            "w_w____c______w",
-            "w___w_wwwww___w",
-            "www_w____cw_www",
-            "w___wwwwwww___w",
             "w_____________w",
-            "wwwww_www_wwwww",
-            "wcw_____w__c__w",
-            "w_wwwww_wwwww_w",
-            "w_wcw_________w",
-            "w_w_w_w_wwwwwww",
-            "w_____w______cw",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "wwwwwwwwwwwwwww"
+        }
+        ,
+        // 高さ2（壁・コインレベル）- Z方向に展開.
+        {
+            "wwwwwwwwwwwwwww",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "wwwwwwwwwwwwwww"
+        }
+        ,
+        // 高さ3（壁・コインレベル）- Z方向に展開.
+        {
+            "wwwwwwwwwwwwwww",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
+            "w_____________w",
             "wwwwwwwwwwwwwww"
         }
     };
+    //(既)修: layerMaskでPlayer/Enemyとのみ衝突判定（床・壁同士の判定をスキップして軽量化）.
 
     mapObj = builder.Build(mapData);
 }

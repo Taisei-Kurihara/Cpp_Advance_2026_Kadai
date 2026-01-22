@@ -97,4 +97,47 @@ protected:
 };
 
 
+// --------------------
+// QuadRendererクラス（平面用）.
+// --------------------
+class QuadRenderer : public MeshRenderer
+{
+public:
+    template<typename TVertex>
+    static std::unique_ptr<QuadRenderer> create(const u8string& shaderPath)
+    {
+        auto ptr = std::unique_ptr<QuadRenderer>(new QuadRenderer());
+        ptr->AddMaterial<TVertex>(shaderPath);
+        ptr->setCreateBudderType<TVertex>();
+        return ptr;
+    }
+    template<typename TVertex>
+    static std::unique_ptr<QuadRenderer> create(const u8string& shaderPath, const u8string& texturePath)
+    {
+        auto ptr = std::unique_ptr<QuadRenderer>(new QuadRenderer());
+        ptr->AddMaterial<TVertex>(shaderPath, texturePath);
+        ptr->setCreateBudderType<TVertex>();
+        return ptr;
+    }
+    template<typename TVertex>
+    static std::unique_ptr<QuadRenderer> create(std::shared_ptr<Material> material)
+    {
+        auto ptr = std::unique_ptr<QuadRenderer>(new QuadRenderer());
+        ptr->AddMaterial(material);
+        ptr->setCreateBudderType<TVertex>();
+        return ptr;
+    }
+    template<typename TVertex>
+    void setCreateBudderType()
+    {
+        createBufer_ = [](SubMesh* submesh) { submesh->createBuffer<TVertex>(); };
+    }
+
+protected:
+    virtual void OnEnable() override;
+
+    std::function<void(SubMesh*)> createBufer_;
+};
+
+
 } // namespace UniDx

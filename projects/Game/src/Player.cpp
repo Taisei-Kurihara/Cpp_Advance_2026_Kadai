@@ -72,31 +72,59 @@ void Player::Update()
         cont.z = 0.0f;
     }
 
-    // ジャンプ中は重力を徐々に強くする.
-    if (jumpTime > 0 && jumpTime <= 150)
+    float dt = Time::deltaTime;
+
+    // ジャンプ開始判定.
+    if (isGrounded() && !isJumping && Input::GetKeyDown(Keyboard::Space))
     {
-        // progress: 0.0 → 1.0（ジャンプ開始から終了まで）.
-        float progress = static_cast<float>(jumpTime) / 150.0f;
-        // sin曲線で重力を徐々に強く（0 → 30）.
+        isJumping = true;
+        jumpTimer = 0.0f;
+    }
+
+    // ジャンプ中の処理.
+    if (isJumping)
+    {
+        // スペースキーを押し続けている間、ジャンプ時間を加算.
+        if (Input::GetKey(Keyboard::Space) && jumpTimer < jumpDuration)
+        {
+            jumpTimer += dt;
+            if (jumpTimer > jumpDuration) jumpTimer = jumpDuration;
+        }
+        else
+        {
+            // キーを離したらジャンプ終了.
+            isJumping = false;
+        }
+    }
+
+    // 重力スケールの更新.
+    if (isJumping && jumpTimer <= jumpDuration)
+    {
+        float progress = jumpTimer / jumpDuration;
         rb->gravityScale = 30.0f * std::sin(progress * 3.14159f * 0.5f);
     }
     else
     {
-        rb->gravityScale = isGrounded() ? 0 : 30.0f;
+        if (!isGrounded())
+        {
+            gravityScaleTimer += dt;
+            if (gravityScaleTimer > jumpDuration) gravityScaleTimer = jumpDuration;
+            float progress = gravityScaleTimer / jumpDuration;
+            rb->gravityScale = 30.0f * std::sin(progress * 3.14159f * 0.5f);
+        }
+        else
+        {
+            rb->gravityScale = 0;
+            gravityScaleTimer = 0.0f;
+        }
     }
 
-    if ((jumpTime == 0 && isGrounded()) || jumpTime != 0)
-    {
-        // ジャンプ入力時間を更新.
-        jumpTime = Input::GetKey(Keyboard::Space) ? jumpTime + 1 : 0;
-    }
     Vector3 Yvelocity = Vector3(0, 0, 0);
 
-    // 接地中かつジャンプ入力があればジャンプ.
-    if (jumpTime > 0 && jumpTime <= 150) {
-        // progress: 0.0 → 1.0（ジャンプ開始から終了まで）.
-        float progress = static_cast<float>(jumpTime) / 150.0f;
-        // cos曲線で上昇力を最初は強く、最後は弱く（10 → 0）.
+    // ジャンプ中の上昇力.
+    if (isJumping && jumpTimer <= jumpDuration)
+    {
+        float progress = jumpTimer / jumpDuration;
         float y = 10.0f * std::cos(progress * 3.14159f * 0.5f);
         Yvelocity = Vector3(0, y, 0);
     }

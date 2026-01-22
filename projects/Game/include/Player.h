@@ -27,8 +27,10 @@ public:
 private:
     float animFrame;
     int groundContactCount = 0;    // 地面との接触数.
-    int jumpTime = 0;              // ジャンプ入力時間.
-    int unJumpTime = 0;              // ジャンプ入力時間.
+    float jumpTimer = 0.0f;         // ジャンプ経過時間（秒）.
+    float jumpDuration = 1.5;     // ジャンプ最大時間（秒）.
+    float gravityScaleTimer = 0.0f; // 重力スケール用タイマー（秒）.
+    bool isJumping = false;         // ジャンプ中フラグ.
 
     void createGroundCheck();      // 足元トリガー作成.
 };

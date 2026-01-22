@@ -54,6 +54,23 @@ constexpr DirectX::XMFLOAT3 cube_normals[] = {
     {0,-1,0}, {0,-1,0}, {0,-1,0}, {0,-1,0}, {0,-1,0}, {0,-1,0},
 };
 
+// 平面（Y軸上向き）の頂点データ.
+// 頂点順序: 三角形1(-0.5,-0.5), (0.5,0.5), (0.5,-0.5) / 三角形2(-0.5,-0.5), (-0.5,0.5), (0.5,0.5).
+constexpr DirectX::XMFLOAT3 quad_positions[] = {
+    {-0.5f, 0.0f, -0.5f}, {0.5f, 0.0f, 0.5f}, {0.5f, 0.0f, -0.5f},
+    {-0.5f, 0.0f, -0.5f}, {-0.5f, 0.0f, 0.5f}, {0.5f, 0.0f, 0.5f},
+};
+
+// UV座標: 位置(x,z)を(u,v)にマッピング. x:-0.5→0, x:0.5→1, z:-0.5→0, z:0.5→1.
+constexpr DirectX::XMFLOAT2 quad_uvs[] = {
+    {0,0}, {1,1}, {1,0},
+    {0,0}, {0,1}, {1,1},
+};
+
+constexpr DirectX::XMFLOAT3 quad_normals[] = {
+    {0,1,0}, {0,1,0}, {0,1,0}, {0,1,0}, {0,1,0}, {0,1,0},
+};
+
 }
 
 namespace UniDx {
@@ -141,6 +158,25 @@ void SphereRenderer::OnEnable()
     submesh->normals = std::span<const Vector3>(normals.data(), normals.size());
     submesh->uv = std::span<const Vector2>(uvs.data(), uvs.size());
     submesh->indices = std::span<const uint32_t>(indices.data(), indices.size());
+    submesh->topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    if (createBufer_ != nullptr)
+    {
+        createBufer_(submesh.get());
+    }
+
+    mesh.submesh.push_back(std::move(submesh));
+}
+
+
+void QuadRenderer::OnEnable()
+{
+    MeshRenderer::OnEnable();
+
+    // メッシュの初期化.
+    auto submesh = std::make_unique<SubMesh>();
+    submesh->positions = std::span<const Vector3>(static_cast<const Vector3*>(quad_positions), std::size(quad_positions));
+    submesh->uv = std::span<const Vector2>(static_cast<const Vector2*>(quad_uvs), std::size(quad_uvs));
+    submesh->normals = std::span<const Vector3>(static_cast<const Vector3*>(quad_normals), std::size(quad_normals));
     submesh->topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
     if (createBufer_ != nullptr)
     {
