@@ -19,6 +19,7 @@
 #include "MapData.h"
 #include "MapBuilder.h"
 #include "LightController.h"
+#include "CollisionGrid.h"
 
 #include <thread>
 #include "MainGame.h"
@@ -339,8 +340,6 @@ void MainGame::createMap()
             "wwwwwwwwwwwwwww"
         }
     };
-    //(既)修: layerMaskでPlayer/Enemyとのみ衝突判定（床・壁同士の判定をスキップして軽量化）.
-
     mapObj = builder.Build(mapData);
 }
 
@@ -415,12 +414,24 @@ unique_ptr<UniDx::Scene> MainGame::CreateScene()
     // -- マップデータ --
     createMap();
 
+    // -- グリッドベース当たり判定システム --
+    auto collisionGridComponent = make_unique<CollisionGrid>();
+    collisionGridComponent->cellSize = Vector3(8.0f, 8.0f, 8.0f);
+    collisionGridComponent->activeRadius = 2;
+    collisionGridComponent->mapRoot = mapObj->transform;
+    collisionGridComponent->RegisterDynamic(playerObj->transform);
+    collisionGrid = collisionGridComponent.get();
+
+    auto collisionGridObj = make_unique<GameObject>(u8"CollisionGrid",
+        move(collisionGridComponent));
+
     // シーンを作って戻す
     return make_unique<Scene>(
 
         make_unique<GameObject>(u8"オブジェクトルート",
             move(playerObj),
-            move(mapObj)
+            move(mapObj),
+            move(collisionGridObj)
         ),
 
         move(lights),

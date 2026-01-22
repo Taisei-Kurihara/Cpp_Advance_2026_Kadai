@@ -10,6 +10,8 @@ namespace UniDx
     class TextMesh;
 }
 
+class CollisionGrid;
+
 class MainGame : public UniDx::Singleton<MainGame>
 {
 public:
@@ -19,10 +21,16 @@ public:
 
     unique_ptr<UniDx::Scene> CreateScene();
 
+    // グリッドベース当たり判定システム.
+    CollisionGrid* collisionGrid = nullptr;
+
 protected:
     int score = 0;
     unique_ptr<UniDx::GameObject> mapObj;
     UniDx::TextMesh* scoreTextMesh;
 
     void createMap();
+
+    // マップの静的コライダーをグリッドに登録.
+    void registerMapColliders(Transform* transform);
 };

@@ -191,6 +191,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\CameraController.h" />
+    <ClInclude Include="include\CollisionGrid.h" />
     <ClInclude Include="include\framework.h" />
     <ClInclude Include="include\GroundCheck.h" />
     <ClInclude Include="include\LightController.h" />
@@ -204,6 +205,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\CameraController.cpp" />
+    <ClCompile Include="src\CollisionGrid.cpp" />
     <ClCompile Include="src\CreateDefaultScene.cpp" />
     <ClCompile Include="src\GroundCheck.cpp" />
     <ClCompile Include="src\LightController.cpp" />
